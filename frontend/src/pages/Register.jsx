@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-function Login() {
+function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
-    role: ''
+    role: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ function Login() {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
     setError('');
   };
@@ -24,12 +25,12 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/user/login', formData);
+      const response = await axios.post('http://localhost:3000/api/v1/user/register', formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/');
-    } catch (e) {
-      setError(e.response?.data?.message || 'Login failed');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -37,8 +38,8 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 px-4">
-      <div className="w-full border-2 border-white/40 border-dotted text-white max-w-md text-gray-200 rounded-xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold mb-6 text-center text-slate-100">Login to Your Account</h2>
+      <div className="w-full max-w-md text-white border-2 border-white/40 border-dotted rounded-xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold mb-6 text-center text-slate-100">Create an Account</h2>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
@@ -47,6 +48,21 @@ function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-slate-300 font-medium">
+              Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              id="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
+            />
+          </div>
+
           <div>
             <label htmlFor="email" className="block text-slate-300 font-medium">
               Email
@@ -58,7 +74,7 @@ function Login() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
             />
           </div>
 
@@ -73,7 +89,7 @@ function Login() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full mt-1 p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-black"
             />
           </div>
 
@@ -98,16 +114,16 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200"
+            className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition duration-200"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
         <p className="text-sm text-slate-600 mt-6 text-center">
-          Don’t have an account?
-          <a onClick={()=>navigate('/register')} className="text-blue-500 hover:underline ml-1">
-            Register
+          Already have an account?
+          <a href="/login" className="text-blue-500 hover:underline ml-1">
+            Login
           </a>
         </p>
       </div>
@@ -115,4 +131,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;

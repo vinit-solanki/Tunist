@@ -1,93 +1,184 @@
-"use client"
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useState, useEffect, useRef } from "react";
+import { HiMenuAlt3, HiX } from "react-icons/hi";
+import { useNavigation, useNavigate } from "react-router-dom";
+const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const sidebarRef = useRef(null);
 
-import { useState } from "react"
-import { useAuth } from "../contexts/AuthContext"
-import { useNavigate } from "react-router-dom"
+  const navItems = [
+    { name: "Home", path: "/", icon: "🏠" },
+    { name: "Your Music", path: "/songs", icon: "🎵" },
+    { name: "Albums", path: "/albums", icon: "💿" },
+    { name: "Groups", path: "/groups", icon: "👥" },
+  ];
 
-function Header() {
-  const { user, logout } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
-  const navigate = useNavigate()
+  const Songs = [
+    { name: "Song 1", minutes: 12, color: "from-pink-500 to-purple-500" },
+    { name: "Song 2", minutes: 8, color: "from-purple-500 to-blue-500" },
+    { name: "Song 3", minutes: 15, color: "from-blue-500 to-cyan-500" },
+    { name: "Song 4", minutes: 12, color: "from-pink-500 to-purple-500" },
+  ];
+  const [songs, setSongs] = useState([]);
 
-  const handleLogout = () => {
-    logout()
-    navigate("/login")
-  }
+  useEffect(() => {
+    const fetchSongs = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:5000/api/v1/song/all", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch songs");
+        const data = await response.json();
+
+        // Take only the top 4 songs (latest or first 4 depending on your logic)
+        setSongs(data.slice(0, 4));
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+      }
+    };
+
+    fetchSongs();
+  }, []);
+
+  // Handle outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target) &&
+        isOpen
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
-    <header className="bg-black/20 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-8 py-4">
-        <div className="flex items-center justify-between">
-          {/* Brand */}
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full animate-pulse"></div>
+    <>
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden bg-black text-white p-4 flex justify-between items-center">
+        <Link to="/" className="text-xl font-bold">
+          Tunist
+        </Link>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-2xl text-white"
+        >
+          {isOpen ? <HiX /> : <HiMenuAlt3 />}
+        </button>
+      </div>
+
+      {/* Optional Backdrop on Mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden transition-all smooth duration-250"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Drawer */}
+      <div
+        ref={sidebarRef}
+        className={`${
+          isOpen ? "block" : "hidden"
+        } lg:block fixed lg:static top-0 left-0 h-full w-64 bg-black z-50 transition-all duration-300`}
+      >
+        {/* Logo */}
+        <div className="p-6">
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+              🎶
             </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                Tunist
-              </h1>
-              <p className="text-xs text-white/60 -mt-1">Premium Music</p>
-            </div>
+            <span className="text-white text-xl font-bold">Tunist</span>
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="px-6 flex-1 overflow-y-auto">
+          <div className="mb-8">
+            <h3 className="text-gray-400 text-xs font-semibold mb-4 uppercase tracking-wider">
+              Discover
+            </h3>
+            <ul className="space-y-1">
+              {navItems.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      location.pathname === item.path
+                        ? "bg-gray-800 text-white"
+                        : "text-gray-400 hover:text-white hover:bg-gray-800"
+                    }`}
+                  >
+                    <span className="font-medium">{item.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Search */}
-          <div className="flex-1 max-w-xl mx-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          {/* Recently Played */}
+          <div className="mb-4">
+            <h3 className="text-gray-400 text-xs font-semibold mb-4 uppercase tracking-wider">
+              My Music
+            </h3>
+            <ul className="space-y-2">
+              {songs.map((song, index) => (
+                <li key={index}>
+                <div onClick={()=>navigate(`/album/${song.album_id}`)} className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer transition-colors">
+                  <img
+                    src={song.thumbnail}
+                    alt={song.title}
+                    className="w-10 h-10 rounded object-cover"
                   />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search for songs, albums, artists..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/50 rounded-2xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200"
-              />
-            </div>
+                  <div className="flex-1">
+                    <div className="text-white font-medium text-sm">{song.title}</div>
+                    <div className="text-xs text-gray-400">From album #{song.album_id}</div>
+                  </div>
+                </div>
+              </li>
+              
+              ))}
+            </ul>
           </div>
+        </nav>
 
-          {/* User Menu */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">{user?.name?.charAt(0).toUpperCase()}</span>
-              </div>
-              <div className="hidden md:block">
-                <p className="text-white font-medium text-sm">{user?.name}</p>
-                <p className="text-white/60 text-xs capitalize">{user?.role}</p>
-              </div>
+        {/* Footer / Auth Buttons */}
+        <div className="p-6">
+          {user ? (
+            <div className="space-y-2">
+              <button
+                onClick={logout}
+                className="w-full bg-gray-800 text-white py-2 px-4 rounded-full font-medium hover:bg-gray-700 transition-colors text-sm"
+              >
+                Sign Out
+              </button>
             </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
-              title="Logout"
+          ) : (
+            <Link
+              to="/login"
+              className="block w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-full text-center font-medium hover:from-green-600 hover:to-blue-700 transition-all"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-            </button>
-          </div>
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
-    </header>
-  )
-}
+    </>
+  );
+};
 
-export default Header
+export default Header;

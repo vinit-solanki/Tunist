@@ -19,9 +19,10 @@ if (!process.env.DB_URL) {
 const sql = neon(process.env.DB_URL as string);
 
 const app = express();
+app.use(cors());
+app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.urlencoded());
-app.use(cors());
 
 const port = process.env.PORT || 4000;
 async function initDB(){

@@ -16,9 +16,10 @@ const connectDB = async()=>{
     }
 }
 const app = express();
+app.use(cors());
+app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
-app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 app.use("/api/v1",userRoutes);

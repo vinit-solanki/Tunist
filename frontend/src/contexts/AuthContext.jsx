@@ -1,20 +1,24 @@
-"use client"
-
 import { createContext, useContext, useState, useEffect } from "react"
 
 const AuthContext = createContext()
 
-export function useAuth() {
-  return useContext(AuthContext)
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+  return context
 }
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check if user is logged in on app start
     const token = localStorage.getItem("token")
     if (token) {
+      // Verify token and get user info
       fetchUserProfile(token)
     } else {
       setLoading(false)
@@ -25,12 +29,13 @@ export function AuthProvider({ children }) {
     try {
       const response = await fetch("http://localhost:3000/api/v1/user/me", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          token: `${token}`,
         },
       })
+
       if (response.ok) {
         const userData = await response.json()
-        setUser(userData)
+        setUser(userData.user || userData) // Handle different response structures
       } else {
         localStorage.removeItem("token")
       }
@@ -43,42 +48,52 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (email, password) => {
-    const response = await fetch("http://localhost:3000/api/v1/user/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    })
+    try {
+      const response = await fetch("http://localhost:3000/api/v1/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const result = await response.json()
+      const data = await response.json()
 
-    if (response.ok) {
-      localStorage.setItem("token", result.token)
-      setUser(result.user)
-      return { success: true }
-    } else {
-      return { success: false, message: result.message }
+      if (response.ok) {
+        localStorage.setItem("token", data.token)
+        setUser(data.user)
+        return data
+      } else {
+        throw new Error(data.message || "Login failed")
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      throw error
     }
   }
 
   const register = async (name, email, password) => {
-    const response = await fetch("http://localhost:3000/api/v1/user/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password }),
-    })
+    try {
+      const response = await fetch("http://localhost:3000/api/v1/user/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      })
 
-    const result = await response.json()
+      const data = await response.json()
 
-    if (response.ok) {
-      localStorage.setItem("token", result.token)
-      setUser(result.user)
-      return { success: true }
-    } else {
-      return { success: false, message: result.message }
+      if (response.ok) {
+        localStorage.setItem("token", data.token)
+        setUser(data.user)
+        return data
+      } else {
+        throw new Error(data.message || "Registration failed")
+      }
+    } catch (error) {
+      console.error("Registration error:", error)
+      throw error
     }
   }
 
