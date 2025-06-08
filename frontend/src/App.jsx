@@ -17,6 +17,9 @@ import Sidebar from "./components/Sidebar";
 import Profile from "./pages/Profile";
 import Header from "./components/Header";
 import Groups from "./pages/Groups";
+import MusicRecommendations from "./pages/MusicRecommendation";
+import GroupById from "./pages/GroupById";
+import UploadForm from "./pages/UploadForm";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -101,7 +104,40 @@ const App = () => {
                 </PrivateRoute>
               }
             />
+            <Route
+            path="/recommendations"
+            element={
+              <PrivateRoute>
+                <MusicRecommendations/>
+              </PrivateRoute>
+            }
+            />
+            <Route
+            path="/groups"
+            element={
+              <PrivateRoute>
+                <Groups />
+              </PrivateRoute>
+            } 
+            />
+          <Route
+          path="/groups/:id"
+          element={
+            <PrivateRoute>
+              <GroupById/>
+            </PrivateRoute>
+          }
+          />
+          <Route
+          path="/upload-form"
+          element={
+            <PrivateRoute>
+              <UploadForm/>
+            </PrivateRoute>
+          }
+          />
           </Routes>
+          
         </main>
         <Footer />
       </div>

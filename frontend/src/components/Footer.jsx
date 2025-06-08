@@ -6,7 +6,7 @@ function Footer() {
       <div className='flex flex-row justify-between items-center'>
         <div className='flex flex-col justify-center items-center'>
           <h1 className='text-xl'>Tunist ~ @2025</h1>
-          <p className='text-md'>Last Updated on 05-06-2025</p>
+          <p className='text-md'>Last Updated on 10-06-2025</p>
         </div>
       </div>
     </div>

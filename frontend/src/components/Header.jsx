@@ -3,6 +3,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import { HiMenuAlt3, HiX } from "react-icons/hi";
 import { useNavigation, useNavigate } from "react-router-dom";
+import TunistLogo from '../assets/tunist-logo.png';
+
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +16,7 @@ const Header = () => {
     { name: "Home", path: "/", icon: "🏠" },
     { name: "Your Music", path: "/songs", icon: "🎵" },
     { name: "Albums", path: "/albums", icon: "💿" },
-    { name: "Groups", path: "/groups", icon: "👥" },
+    { name: "Recommendations", path: "/recommendations", icon: "👥" },
   ];
 
   const Songs = [
@@ -70,7 +72,7 @@ const Header = () => {
       {/* Mobile Top Bar */}
       <div className="lg:hidden bg-black text-white p-4 flex justify-between items-center">
         <Link to="/" className="text-xl font-bold">
-          Tunist
+          {isOpen? "Tunist": ""}
         </Link>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -98,10 +100,8 @@ const Header = () => {
         {/* Logo */}
         <div className="p-6">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-              🎶
-            </div>
-            <span className="text-white text-xl font-bold">Tunist</span>
+            <img src={TunistLogo} className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center"/>
+            <span className="text-white text-2xl font-bold">Tunist</span>
           </Link>
         </div>
 
@@ -130,6 +130,13 @@ const Header = () => {
             </ul>
           </div>
 
+          <div className="mb-4">
+              <Link to="/upload-form">
+            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white cursor-pointer p-3 rounded-lg text-xs font-semibold uppercase tracking-wider">
+              + Upload Your Music
+            </button>
+             </Link>
+          </div>
           {/* Recently Played */}
           <div className="mb-4">
             <h3 className="text-gray-400 text-xs font-semibold mb-4 uppercase tracking-wider">
