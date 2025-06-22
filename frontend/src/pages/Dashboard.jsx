@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [albums, setAlbums] = useState([]);
   const [songs, setSongs] = useState([]);
 
@@ -41,7 +42,8 @@ const Dashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {albums.map((album, index) => (
-            <div key={index} className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div onClick={()=>navigate(`/album/${album.id}`)} key={index} className="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+
               <img src={album.thumbnail} alt={album.title} className="w-full h-48 object-cover" />
               <div className="p-4">
                 <h3 className="text-lg font-semibold text-white">{album.title}</h3>

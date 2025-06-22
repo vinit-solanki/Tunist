@@ -20,7 +20,7 @@ import MusicRecommendations from "./pages/MusicRecommendation";
 import GroupById from "./pages/GroupById";
 import UploadForm from "./pages/UploadForm";
 import ErrorPage from "./pages/ErrorPage";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -33,38 +33,38 @@ const PrivateRoute = ({ children }) => {
 const App = () => {
   const navigate = useNavigate();
   const AdminRoute = ({ children }) => {
-  const [isAdmin, setIsAdmin] = useState(null);
-  const navigate = useNavigate();
+    const [isAdmin, setIsAdmin] = useState(null);
+    const navigate = useNavigate();
 
-  React.useEffect(() => {
-    const checkAdmin = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await fetch("http://localhost:3000/api/v1/user/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            token: token,
-          },
-        });
-        const data = await res.json();
-        if (data.role === "admin") {
-          setIsAdmin(true);
-        } else {
+    React.useEffect(() => {
+      const checkAdmin = async () => {
+        const token = localStorage.getItem("token");
+        try {
+          const res = await fetch("http://localhost:3000/api/v1/user/me", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              token: token,
+            },
+          });
+          const data = await res.json();
+          if (data.role === "admin") {
+            setIsAdmin(true);
+          } else {
+            navigate("/error-page");
+          }
+        } catch (err) {
+          console.error(err);
           navigate("/error-page");
         }
-      } catch (err) {
-        console.error(err);
-        navigate("/error-page");
-      }
-    };
-    checkAdmin();
-  }, [navigate]);
+      };
+      checkAdmin();
+    }, [navigate]);
 
-  if (isAdmin === null) return <div>Loading...</div>;
+    if (isAdmin === null) return <div>Loading...</div>;
 
-  return children;
-};
+    return children;
+  };
 
   return (
     <div className="min-h-screen w-full bg-gray-950 text-gray-200 overflow-x-hidden flex">
@@ -141,50 +141,48 @@ const App = () => {
               }
             />
             <Route
-            path="/recommendations"
-            element={
-              <PrivateRoute>
-                <MusicRecommendations/>
-              </PrivateRoute>
-            }
+              path="/recommendations"
+              element={
+                <PrivateRoute>
+                  <MusicRecommendations />
+                </PrivateRoute>
+              }
             />
             <Route
-            path="/groups"
-            element={
-              <PrivateRoute>
-                <Groups />
-              </PrivateRoute>
-            } 
+              path="/groups"
+              element={
+                <PrivateRoute>
+                  <Groups />
+                </PrivateRoute>
+              }
             />
-          <Route
-          path="/groups/:id"
-          element={
-            <PrivateRoute>
-              <GroupById/>
-            </PrivateRoute>
-          }
-          />
-          <Route
-  path="/upload-form"
-  element={
-    <PrivateRoute>
-      <AdminRoute>
-        <UploadForm />
-      </AdminRoute>
-    </PrivateRoute>
-  }
-/>
-
-          <Route
-          path="/error-page"
-          element={
-            <PrivateRoute>
-              <ErrorPage/>
-            </PrivateRoute>
-          }
-          />
+            <Route
+              path="/groups/:id"
+              element={
+                <PrivateRoute>
+                  <GroupById />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/upload-form"
+              element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <UploadForm />
+                  </AdminRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/error-page"
+              element={
+                <PrivateRoute>
+                  <ErrorPage />
+                </PrivateRoute>
+              }
+            />
           </Routes>
-          
         </main>
         <Footer />
       </div>
