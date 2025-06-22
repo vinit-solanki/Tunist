@@ -1,287 +1,175 @@
+# flask_ml_api.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import numpy as np
 import pandas as pd
-import pickle
 import os
-from sklearn.preprocessing import StandardScaler
-import warnings
-warnings.filterwarnings('ignore')
+import traceback
+from model import MusicRecommendationModel
 
-# Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
+model = None
 
-print("🚀 Starting Music Recommendation ML API")
-print("=" * 40)
 
-# Global variables for models
-models = None
-scaler = None
-features = None
-targets = None
-
-def load_models():
-    """Load the trained ML models"""
-    global models, scaler, features, targets
-    
+def initialize_model():
+    global model
     try:
-        # Try to load existing models
-        if os.path.exists('music_emotion_models.pkl'):
-            with open('music_emotion_models.pkl', 'rb') as f:
-                model_package = pickle.load(f)
-                models = model_package['models']
-                scaler = model_package['scaler']
-                features = model_package['features']
-                targets = model_package['targets']
-            print("✅ Loaded existing trained models")
+        model = MusicRecommendationModel()
+
+        if os.path.exists('music_recommendation_model.pkl'):
+            model.load_model('music_recommendation_model.pkl')
+            print("Loaded existing model")
+        elif os.path.exists('light_spotify_dataset.csv'):
+            df = pd.read_csv('light_spotify_dataset.csv')
+            model.preprocess_data(df)
+            model.save_model()
+            print("Trained new model and saved")
         else:
-            print("⚠️ No trained models found. Creating dummy models...")
-            create_dummy_models()
-            
+            print("Warning: No dataset found. Please provide light_spotify_dataset.csv")
+            return False
+        return True
     except Exception as e:
-        print(f"❌ Error loading models: {e}")
-        create_dummy_models()
+        print(f"Error initializing model: {e}")
+        traceback.print_exc()
+        return False
 
-def create_dummy_models():
-    """Create dummy models for demonstration"""
-    global models, scaler, features, targets
-    
-    from sklearn.ensemble import RandomForestRegressor
-    
-    features = ['danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 
-               'instrumentalness', 'liveness', 'valence', 'tempo']
-    targets = ['happiness_score', 'sadness_score', 'energy_score', 'calmness_score']
-    
-    # Create dummy training data
-    np.random.seed(42)
-    X_dummy = np.random.rand(100, len(features))
-    
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_dummy)
-    
-    models = {}
-    for target in targets:
-        # Create simple dummy targets based on features
-        if target == 'happiness_score':
-            y_dummy = X_dummy[:, 7] * 0.8 + X_dummy[:, 1] * 0.2  # valence + energy
-        elif target == 'sadness_score':
-            y_dummy = (1 - X_dummy[:, 7]) * 0.8 + (1 - X_dummy[:, 1]) * 0.2
-        elif target == 'energy_score':
-            y_dummy = X_dummy[:, 1] * 0.9 + X_dummy[:, 0] * 0.1  # energy + danceability
-        else:  # calmness_score
-            y_dummy = X_dummy[:, 4] * 0.6 + (1 - X_dummy[:, 1]) * 0.4  # acousticness + low energy
-        
-        model = RandomForestRegressor(n_estimators=50, random_state=42)
-        model.fit(X_scaled, y_dummy)
-        models[target] = model
-    
-    print("✅ Created dummy models for demonstration")
 
-# Replace the SONG_DATABASE with real data from CSV
-def load_song_database():
-    """Load songs from the CSV file"""
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy', 'model_loaded': model is not None})
+
+
+@app.route('/api/emotions', methods=['GET'])
+def get_emotions():
     try:
-        df = pd.read_csv('light_spotify_dataset.csv')
-        songs = []
-        for _, row in df.iterrows():
-            song = {
-                'title': row['song'],
-                'artist': row['artist'],
-                'genre': row['Genre'],
-                'danceability': row['Danceability'] / 100,  # Convert from 0-100 to 0-1 scale
-                'energy': row['Energy'] / 100,
-                'loudness': row['Loudness'],
-                'speechiness': row['Speechiness'] / 100,
-                'acousticness': row['Acousticness'] / 100,
-                'instrumentalness': row['Instrumentalness'] / 100,
-                'liveness': row['Liveness'] / 100,
-                'valence': row['Positiveness'] / 100,  # Using Positiveness as valence
-                'tempo': row['Tempo']
-            }
-            songs.append(song)
-        return songs
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+        return jsonify(model.get_available_options())
     except Exception as e:
-        print(f"Error loading song database: {e}")
-        return []
+        return jsonify({'error': str(e)}), 500
 
-# Replace the static SONG_DATABASE with the loaded data
-SONG_DATABASE = load_song_database()
 
-def predict_emotion_scores(song_features):
-    """Predict emotion scores for a song"""
-    if models is None or scaler is None:
-        return None
-    
-    try:
-        # Convert to numpy array and scale
-        features_array = np.array([song_features])
-        features_scaled = scaler.transform(features_array)
-        
-        # Predict emotion scores
-        emotion_scores = {}
-        for emotion in targets:
-            score = models[emotion].predict(features_scaled)[0]
-            emotion_scores[emotion] = max(0, min(1, score))  # Clamp between 0 and 1
-        
-        return emotion_scores
-    except Exception as e:
-        print(f"Error predicting emotion scores: {e}")
-        return None
-
-def calculate_emotion_similarity(user_emotion, song_emotion_scores):
-    """Calculate similarity between user emotion and song emotion scores"""
-    # Normalize user emotion (0-100 to 0-1)
-    user_normalized = {
-        'happiness': user_emotion['happiness'] / 100,
-        'sadness': user_emotion['sadness'] / 100,
-        'energy': user_emotion['energy'] / 100,
-        'calmness': user_emotion['calmness'] / 100
-    }
-    
-    # Calculate weighted similarity
-    similarity = 0
-    weights = {'happiness': 0.3, 'sadness': 0.3, 'energy': 0.25, 'calmness': 0.15}
-    
-    for emotion, weight in weights.items():
-        song_score = song_emotion_scores.get(f'{emotion}_score', 0)
-        user_score = user_normalized[emotion]
-        similarity += weight * (1 - abs(song_score - user_score))
-    
-    return similarity
-
-@app.route('/', methods=['GET'])
-def home():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'running',
-        'message': 'Music Recommendation ML API',
-        'models_loaded': models is not None
-    })
-
-@app.route('/recommend', methods=['POST'])
+@app.route('/api/recommend', methods=['POST'])
 def recommend_songs():
-    """Main recommendation endpoint"""
     try:
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+
         data = request.get_json()
-        
-        if not data or 'emotion' not in data:
-            return jsonify({'error': 'Emotion data is required'}), 400
-        
-        user_emotion = data['emotion']
-        
-        # Validate emotion data
-        required_emotions = ['happiness', 'sadness', 'energy', 'calmness']
-        for emotion in required_emotions:
-            if emotion not in user_emotion:
-                return jsonify({'error': f'Missing emotion: {emotion}'}), 400
-        
-        print(f"Received emotion request: {user_emotion}")
-        
-        # Calculate recommendations
-        recommendations = []
-        
-        for song in SONG_DATABASE:
-            # Extract audio features
-            song_features = [
-                song['danceability'], song['energy'], song['loudness'],
-                song['speechiness'], song['acousticness'], song['instrumentalness'],
-                song['liveness'], song['valence'], song['tempo']
-            ]
-            
-            # Predict emotion scores for the song
-            emotion_scores = predict_emotion_scores(song_features)
-            
-            if emotion_scores:
-                # Calculate similarity to user emotion
-                similarity = calculate_emotion_similarity(user_emotion, emotion_scores)
-                
-                recommendations.append({
-                    'title': song['title'],
-                    'artist': song['artist'],
-                    'genre': song['genre'],
-                    'similarity_score': similarity,
-                    'emotion_scores': emotion_scores,
-                    'audio_features': {
-                        'energy': song['energy'],
-                        'valence': song['valence'],
-                        'danceability': song['danceability']
-                    }
-                })
-        
-        # Sort by similarity and return top recommendations
-        recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
-        top_recommendations = recommendations[:6]
-        
-        # Analyze user emotion
-        dominant_emotion = max(user_emotion.items(), key=lambda x: x[1])
-        
-        response = {
-            'recommendations': top_recommendations,
-            'user_emotion_analysis': {
-                'dominant_emotion': dominant_emotion[0],
-                'emotion_vector': user_emotion,
-                'mood_category': classify_mood(user_emotion)
+        emotion = data.get('emotion')
+        if not emotion:
+            return jsonify({'error': 'emotion is required'}), 400
+
+        num_recommendations = data.get('num_recommendations', 10)
+        filters = data.get('filters', {})
+
+        if not isinstance(num_recommendations, int) or not (1 <= num_recommendations <= 50):
+            return jsonify({'error': 'num_recommendations must be between 1 and 50'}), 400
+
+        return jsonify(model.get_emotion_based_recommendations(emotion, num_recommendations, filters))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/similar', methods=['POST'])
+def get_similar_songs():
+    try:
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+
+        data = request.get_json()
+        artist = data.get('artist')
+        song = data.get('song')
+        if not artist or not song:
+            return jsonify({'error': 'artist and song are required'}), 400
+
+        num_recommendations = data.get('num_recommendations', 10)
+        if not isinstance(num_recommendations, int) or not (1 <= num_recommendations <= 50):
+            return jsonify({'error': 'num_recommendations must be between 1 and 50'}), 400
+
+        return jsonify(model.get_similar_songs(artist, song, num_recommendations))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/search', methods=['GET'])
+def search_songs():
+    try:
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+
+        query = request.args.get('q', '').strip().lower()
+        if not query:
+            return jsonify({'error': 'Search query is required'}), 400
+
+        df = model.df
+        results_df = df[(df['artist'].str.lower().str.contains(query)) | (df['song'].str.lower().str.contains(query))].head(20)
+
+        results = [
+            {
+                'artist': row['artist'],
+                'song': row['song'],
+                'emotion': row['emotion'],
+                'genre': row['Genre'],
+                'release_date': row['Release Date'],
+                'popularity': row['Popularity']
+            }
+            for _, row in results_df.iterrows()
+        ]
+
+        return jsonify({'results': results, 'total_found': len(results), 'query': query})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/stats', methods=['GET'])
+def get_dataset_stats():
+    try:
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+
+        df = model.df
+        stats = {
+            'total_songs': len(df),
+            'total_artists': df['artist'].nunique(),
+            'emotion_distribution': df['emotion'].value_counts().to_dict(),
+            'genre_distribution': df['Genre'].value_counts().head(10).to_dict(),
+            'year_range': {
+                'earliest': int(df['Release Date'].min()),
+                'latest': int(df['Release Date'].max())
             },
-            'total_songs_analyzed': len(SONG_DATABASE)
+            'popularity_stats': {
+                'mean': float(df['Popularity'].mean()),
+                'median': float(df['Popularity'].median()),
+                'max': int(df['Popularity'].max()),
+                'min': int(df['Popularity'].min())
+            }
         }
-        
-        print(f"Returning {len(top_recommendations)} recommendations")
-        return jsonify(response)
-        
+        return jsonify(stats)
     except Exception as e:
-        print(f"Error in recommend_songs: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': str(e)}), 500
 
-def classify_mood(emotion):
-    """Classify overall mood based on emotion scores"""
-    if emotion['happiness'] > 70 and emotion['energy'] > 60:
-        return 'upbeat'
-    elif emotion['sadness'] > 60:
-        return 'melancholic'
-    elif emotion['energy'] > 80:
-        return 'energetic'
-    elif emotion['calmness'] > 70:
-        return 'peaceful'
-    else:
-        return 'balanced'
 
-@app.route('/analyze', methods=['POST'])
-def analyze_song():
-    """Analyze a song's emotional characteristics"""
-    try:
-        data = request.get_json()
-        
-        if not data or 'audio_features' not in data:
-            return jsonify({'error': 'Audio features are required'}), 400
-        
-        audio_features = data['audio_features']
-        
-        # Predict emotion scores
-        emotion_scores = predict_emotion_scores(audio_features)
-        
-        if emotion_scores is None:
-            return jsonify({'error': 'Failed to analyze song'}), 500
-        
-        return jsonify({
-            'emotion_scores': emotion_scores,
-            'dominant_emotion': max(emotion_scores.items(), key=lambda x: x[1])[0],
-            'audio_features': audio_features
-        })
-        
-    except Exception as e:
-        print(f"Error in analyze_song: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Endpoint not found'}), 404
 
-# Load models on startup
-load_models()
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({'error': 'Method not allowed'}), 405
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
 
 if __name__ == '__main__':
-    print("\n🎵 Music Recommendation ML API Server")
-    print("Available endpoints:")
-    print("  GET  /          - Health check")
-    print("  POST /recommend - Get song recommendations")
-    print("  POST /analyze   - Analyze song emotions")
-    print("\n🚀 Starting server on http://localhost:5001")
-    
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    print("Initializing music recommendation API...")
+    if initialize_model():
+        print("Model initialized successfully!")
+        print("Starting Flask server on port 5005...")
+        app.run(debug=True, host='0.0.0.0', port=5005)
+    else:
+        print("Failed to initialize model. Please check your dataset and try again.")
