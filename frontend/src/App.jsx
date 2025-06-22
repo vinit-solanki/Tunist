@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -13,13 +13,14 @@ import Player from "./components/Player";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
-import Sidebar from "./components/Sidebar";
 import Profile from "./pages/Profile";
 import Header from "./components/Header";
 import Groups from "./pages/Groups";
 import MusicRecommendations from "./pages/MusicRecommendation";
 import GroupById from "./pages/GroupById";
 import UploadForm from "./pages/UploadForm";
+import ErrorPage from "./pages/ErrorPage";
+import { useNavigate } from 'react-router-dom';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -30,6 +31,41 @@ const PrivateRoute = ({ children }) => {
 };
 
 const App = () => {
+  const navigate = useNavigate();
+  const AdminRoute = ({ children }) => {
+  const [isAdmin, setIsAdmin] = useState(null);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const checkAdmin = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch("http://localhost:3000/api/v1/user/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            token: token,
+          },
+        });
+        const data = await res.json();
+        if (data.role === "admin") {
+          setIsAdmin(true);
+        } else {
+          navigate("/error-page");
+        }
+      } catch (err) {
+        console.error(err);
+        navigate("/error-page");
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+
+  if (isAdmin === null) return <div>Loading...</div>;
+
+  return children;
+};
+
   return (
     <div className="min-h-screen w-full bg-gray-950 text-gray-200 overflow-x-hidden flex">
       <div className="min-h-screen">
@@ -129,10 +165,21 @@ const App = () => {
           }
           />
           <Route
-          path="/upload-form"
+  path="/upload-form"
+  element={
+    <PrivateRoute>
+      <AdminRoute>
+        <UploadForm />
+      </AdminRoute>
+    </PrivateRoute>
+  }
+/>
+
+          <Route
+          path="/error-page"
           element={
             <PrivateRoute>
-              <UploadForm/>
+              <ErrorPage/>
             </PrivateRoute>
           }
           />
