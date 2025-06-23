@@ -27,19 +27,6 @@
 ![ESLint](https://img.shields.io/badge/ESLint-4B32C3.svg?style=flat&logo=ESLint&logoColor=white)
 ![Axios](https://img.shields.io/badge/Axios-5A29E4.svg?style=flat&logo=Axios&logoColor=white)
 
----
-
-## 📑 Table of Contents
-
-- [Overview](#overview)  
-- [Getting Started](#getting-started)  
-  - [Prerequisites](#prerequisites)  
-  - [Installation](#installation)  
-  - [Usage](#usage)  
-  - [Testing](#testing)  
-
----
-
 ## 📌 Overview
 
 **TUNIST** is an AI-powered music recommendation platform that suggests songs based on user emotions, delivering a personalized and dynamic audio experience.
