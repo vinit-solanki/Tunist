@@ -15,7 +15,7 @@ function Profile() {
   const [error, setError] = useState("")
   const fetchProfile = async ()=>{
     try{
-      const response = await axios.get('http://localhost:3000/api/v1/user/me');
+      const response = await axios.get('http://tunist-user-service.onrender.com/api/v1/user/me');
       if(!response){
         setError("Failed to set profile")
         return;
