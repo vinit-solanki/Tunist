@@ -26,10 +26,6 @@ export const isAuth = async (
     // Accept both `token` and `Authorization: Bearer <token>`
     let token = req.headers.token as string;
 
-    if (!token && req.headers.authorization?.startsWith("Bearer ")) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-
     if (!token) {
       res.status(403).json({ message: "Please Login" });
       return;

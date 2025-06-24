@@ -24,13 +24,13 @@ export const addAlbum = tryCatch(async (req: AuthenticatedRequest, res: Response
         });
     }
     const fileBuffer = getBuffer(file);
-    if (!fileBuffer?.content) {
+    if (!fileBuffer || !fileBuffer.content) {
         return res.status(500).json({
             message: "Error uploading file",
         });
     }
     
-    const cloud = await cloudinary.v2.uploader.upload(fileBuffer.content as string, {
+    const cloud = await cloudinary.v2.uploader.upload(fileBuffer.content, {
         folder: "albums",
     });
     
@@ -69,12 +69,12 @@ export const addSong = tryCatch(async (req: AuthenticatedRequest, res: Response)
         });
     }
     const fileBuffer = getBuffer(file);
-    if (!fileBuffer?.content) {
+    if (!fileBuffer || !fileBuffer?.content) {
         return res.status(500).json({
             message: "Error uploading file",
         });
     }
-    const cloud = await cloudinary.v2.uploader.upload(fileBuffer.content as string, {
+    const cloud = await cloudinary.v2.uploader.upload(fileBuffer.content, {
         folder: "songs",
         resource_type: "video",
     })
@@ -109,7 +109,7 @@ export const addThumbnail = tryCatch(async (req: AuthenticatedRequest, res: Resp
         });
     }
     const fileBuffer = getBuffer(file);
-    if (!fileBuffer?.content) {
+    if (!fileBuffer|| !fileBuffer?.content) {
         return res.status(500).json({
             message: "Error uploading file",
         });
