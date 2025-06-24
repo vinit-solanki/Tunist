@@ -25,7 +25,7 @@ function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://tunist-user-service.onrender.com/api/v1/user/register', formData);
+      const response = await axios.post('https://tunist-user-service.onrender.com/api/v1/user/register', formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/');

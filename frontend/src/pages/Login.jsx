@@ -24,7 +24,7 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://tunist-user-service.onrender.com/api/v1/user/login', formData);
+      const response = await axios.post('https://tunist-user-service.onrender.com/api/v1/user/login', formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/');

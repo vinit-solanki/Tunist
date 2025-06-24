@@ -40,7 +40,7 @@ const App = () => {
       const checkAdmin = async () => {
         const token = localStorage.getItem("token");
         try {
-          const res = await fetch("http://tunist-user-service.onrender.com/api/v1/user/me", {
+          const res = await fetch("https://tunist-user-service.onrender.com/api/v1/user/me", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
