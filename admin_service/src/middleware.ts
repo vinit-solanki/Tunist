@@ -23,36 +23,34 @@ export const isAuth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.headers.token as string;
+    // Accept both `token` and `Authorization: Bearer <token>`
+    let token = req.headers.token as string;
+
+    if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
     if (!token) {
-      res.status(403).json({
-        message: "Please Login",
-      });
+      res.status(403).json({ message: "Please Login" });
       return;
     }
 
     const { data } = await axios.get(`${process.env.USER_URL}/api/v1/user/me`, {
-      headers: {
-        token,
-      },
+      headers: { token },
     });
 
     req.user = data;
 
     next();
   } catch (error) {
-    res.status(403).json({
-      message: "Please Login",
-    });
+    res.status(403).json({ message: "Please Login" });
   }
 };
 
-//multer setup
+// Multer setup
 import multer from "multer";
 
 const storage = multer.memoryStorage();
-
 const uploadFile = multer({ storage }).single("file");
 
 export default uploadFile;
