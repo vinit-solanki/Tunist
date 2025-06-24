@@ -14,7 +14,7 @@ const MusicRecommendations = () => {
 
   useEffect(() => {
     // Fetch available emotions and genres on mount
-    fetch('http://localhost:5005/api/emotions')
+    fetch('https://song-recommendation-using.onrender.com/api/emotions')
       .then((res) => res.json())
       .then((data) => {
         if (data && Array.isArray(data.emotions)) {
@@ -34,7 +34,7 @@ const MusicRecommendations = () => {
   const getRecommendations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5005/api/recommend', {
+      const response = await fetch('https://song-recommendation-using.onrender.com/api/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
