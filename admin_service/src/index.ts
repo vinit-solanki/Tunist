@@ -20,7 +20,7 @@ const sql = neon(process.env.DB_URL as string);
 
 const app = express();
 app.use(cors());
-app.use(cors({ origin: true }));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded());
 
