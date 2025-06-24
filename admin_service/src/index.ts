@@ -65,7 +65,9 @@ redisClient.connect()
 .catch((err)=>console.log("Error connecting to Redis Client", err))
 
 app.use("/api/v1",adminRoutes);
-
+app.get("/", (req,res)=>{
+    res.send("Hello World!");
+})
 initDB().then(()=>{
     app.listen(port, ()=>{
         console.log(`Server is running on port ${port}`);
