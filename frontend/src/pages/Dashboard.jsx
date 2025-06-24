@@ -9,8 +9,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const albumRes = await axios.get('http://localhost:5000/api/v1/album/all');
-        const songRes = await axios.get('http://localhost:5000/api/v1/song/all');
+        const albumRes = await axios.get('https://tunist-song-service.onrender.com/api/v1/album/all');
+        const songRes = await axios.get('https://tunist-song-service.onrender.com/api/v1/song/all');
 
         // Limit to top 4
         setAlbums(albumRes.data.slice(0, 4));

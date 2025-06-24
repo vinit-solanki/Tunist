@@ -12,7 +12,7 @@ const AlbumDetail = () => {
       try {
         const numericId = parseInt(id);
         console.log(numericId);
-        const res = await axios.get(`http://localhost:5000/api/v1/album/${numericId}`);
+        const res = await axios.get(`https://tunist-song-service.onrender.com/api/v1/album/${numericId}`);
         setAlbum(res.data.album);
         setSongs(res.data.songs);
       } catch (err) {

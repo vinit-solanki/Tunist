@@ -31,7 +31,7 @@ const Header = () => {
     const fetchSongs = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/api/v1/song/all", {
+        const response = await fetch("https://tunist-song-service.onrender.com/api/v1/song/all", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

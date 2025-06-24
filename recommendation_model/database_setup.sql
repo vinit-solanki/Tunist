@@ -296,6 +296,6 @@ if __name__ == '__main__':
     print("  GET  /          - Health check")
     print("  POST /recommend - Get song recommendations")
     print("  POST /analyze   - Analyze song emotions")
-    print("\n🚀 Starting server on http://localhost:5000")
+    print("\n🚀 Starting server on https://tunist-song-service.onrender.com")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

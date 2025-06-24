@@ -8,7 +8,7 @@ const Albums = () => {
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/v1/album/all');
+        const res = await axios.get('https://tunist-song-service.onrender.com/api/v1/album/all');
         setAlbums(res.data);
       } catch (err) {
         console.error("Failed to fetch albums:", err);
