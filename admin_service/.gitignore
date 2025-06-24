@@ -1,4 +1,8 @@
 .env
 package-lock.json
 node_modules
+<<<<<<< HEAD
 .vercel
+=======
+dist
+>>>>>>> parent of c374481 (implemented role based access)
