@@ -10,6 +10,12 @@ const port = process.env.PORT;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+  credentials: true
+}));
 app.use(cors({ origin: '*' }));
 export const redisClient = redis.createClient({
     password: `${process.env.REDIS_PASSWORD}`,

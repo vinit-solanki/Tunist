@@ -7,6 +7,18 @@ import redis from 'redis';
 import cors from 'cors';
 
 dotenv.config();
+const app = express();
+app.use(cors());
+app.use(cors({ origin: '*' }));
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
+
 cloudinary.v2.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -18,11 +30,6 @@ if (!process.env.DB_URL) {
 
 const sql = neon(process.env.DB_URL as string);
 
-const app = express();
-app.use(cors());
-app.use(cors({ origin: '*' }));
-app.use(express.json());
-app.use(express.urlencoded());
 
 const port = process.env.PORT || 4000;
 async function initDB(){
