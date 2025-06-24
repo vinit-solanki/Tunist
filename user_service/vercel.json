@@ -1,0 +1,15 @@
+{
+    "version": 2,
+    "builds": [
+    { "src": "dist/index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "dist/index.js" }
+  ],
+    "env": {
+        "NODE_ENV": "production",
+        "PORT":"3000",
+        "MONGO_URI":"mongodb+srv://2022vinitsolanki:OZIDS4DkdN7Z8Aut@cluster0.k1hlw85.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+        "JWT_SEC":"secret123"
+    }
+}
