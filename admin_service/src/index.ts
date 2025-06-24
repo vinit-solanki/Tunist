@@ -66,15 +66,10 @@ redisClient.connect()
 
 app.use("/api/v1",adminRoutes);
 
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
-
 initDB().then(()=>{
-    console.log("PostgreSQL & Redis Connected!")
+    app.listen(port, ()=>{
+        console.log(`Server is running on port ${port}`);
+    })
 }).catch((e)=>{
     console.log(e)
 }) 
-app.listen(port, ()=>{
-    console.log(`Server is running on port ${port}`);
-})

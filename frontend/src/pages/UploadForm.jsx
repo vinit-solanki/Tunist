@@ -69,7 +69,7 @@ function UploadForm() {
     formData.append('file', albumData.thumbnail);
 
     try {
-      const response = await axios.post('http://localhost:4000/api/v1/album/new', formData, {
+      const response = await axios.post('https://tunist-admin-service-1.onrender.com/api/v1/album/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           token: `${token}`,
@@ -104,7 +104,7 @@ function UploadForm() {
     formData.append('album', albumId);
 
     try {
-      const response = await axios.post('http://localhost:4000/api/v1/song/new', formData, {
+      const response = await axios.post('https://tunist-admin-service-1.onrender.com/api/v1/song/new', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           token: `${token}`,
@@ -114,7 +114,7 @@ function UploadForm() {
       if (songData.thumbnail) {
         const thumbnailFormData = new FormData();
         thumbnailFormData.append('file', songData.thumbnail);
-        await axios.post(`http://localhost:4000/api/v1/song/${songId}`, thumbnailFormData, {
+        await axios.post(`https://tunist-admin-service-1.onrender.com/api/v1/song/${songId}`, thumbnailFormData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             token: `${token}`,
@@ -140,7 +140,7 @@ function UploadForm() {
     }
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:4000/api/v1/album/${albumId}`, {
+      await axios.delete(`https://tunist-admin-service-1.onrender.com/api/v1/album/${albumId}`, {
         headers: {
           token: `${token}`,
         },
@@ -164,7 +164,7 @@ function UploadForm() {
     }
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:4000/api/v1/song/${songId}`, {
+      await axios.delete(`https://tunist-admin-service-1.onrender.com/api/v1/song/${songId}`, {
         headers: {
           token: `${token}`,
         },
