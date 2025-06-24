@@ -113,7 +113,7 @@ const MusicRecommendations = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* <div className="flex items-center space-x-2">
           <input
             type="checkbox"
             checked={filters.explicit}
@@ -121,7 +121,7 @@ const MusicRecommendations = () => {
             className="form-checkbox"
           />
           <label>Explicit Content</label>
-        </div>
+        </div> */}
 
         <button
           onClick={getRecommendations}

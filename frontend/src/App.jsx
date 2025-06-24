@@ -40,7 +40,7 @@ const App = () => {
       const checkAdmin = async () => {
         const token = localStorage.getItem("token");
         try {
-          const res = await fetch("https://user-service-ochre.vercel.app/api/v1/user/me", {
+          const res = await fetch("http://localhost:3000/api/v1/user/me", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

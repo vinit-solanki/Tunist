@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (token) => {
     try {
-      const response = await fetch("https://user-service-ochre.vercel.app/api/v1/user/me", {
+      const response = await fetch("http://localhost:3000/api/v1/user/me", {
         headers: {
           token: `${token}`,
         },
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch("https://user-service-ochre.vercel.app/api/v1/user/login", {
+      const response = await fetch("http://localhost:3000/api/v1/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await fetch("https://user-service-ochre.vercel.app/api/v1/user/register", {
+      const response = await fetch("http://localhost:3000/api/v1/user/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
