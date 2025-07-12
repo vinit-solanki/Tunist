@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; // ✅ import auth context
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ use the login method from context
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,12 +26,10 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('https://tunist-user-service.onrender.com/api/v1/user/login', formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/');
+      await login(formData.email, formData.password); // ✅ triggers setUser internally
+      navigate('/'); // ✅ navigate to dashboard or home
     } catch (e) {
-      setError(e.response?.data?.message || 'Login failed');
+      setError(e.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ function Login() {
 
         <p className="text-sm text-slate-600 mt-6 text-center">
           Don’t have an account?
-          <a onClick={()=>navigate('/register')} className="text-blue-500 hover:underline ml-1">
+          <a onClick={() => navigate('/register')} className="text-blue-500 hover:underline ml-1">
             Register
           </a>
         </p>
