@@ -28,6 +28,7 @@ const Dashboard = () => {
       {/* Discover Section */}
       <section className="mb-10">
         <div className="rounded-xl overflow-hidden bg-gradient-to-r from-purple-600 to-blue-500 text-white p-10 text-center">
+          <h1 className="text-4xl font-bold mb-4">This Project is Deployed on Free Tier Hence a 50s deplay is expected!</h1>
           <h1 className="text-4xl font-bold mb-4">Discover Your Sound</h1>
           <p className="text-lg mb-6">Millions of songs, curated playlists, and exclusive content</p>
           <button className="px-6 py-2 bg-white text-black rounded-full font-semibold hover:opacity-90 transition">Start Listening</button>

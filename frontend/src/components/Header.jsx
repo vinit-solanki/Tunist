@@ -48,7 +48,7 @@ const Header = () => {
     };
 
     fetchSongs();
-  }, []);
+  }, [user]);
 
   // Handle outside click
   useEffect(() => {
