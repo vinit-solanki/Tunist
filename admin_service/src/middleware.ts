@@ -17,6 +17,9 @@ interface AuthenticatedRequest extends Request {
   user?: IUser | null;
 }
 
+// Resolve user-service URL; fall back to the deployed user service if env is missing or mis-set.
+const USER_SERVICE_URL = process.env.USER_URL || "https://tunist-user-service.onrender.com";
+
 export const isAuth = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -26,12 +29,19 @@ export const isAuth = async (
     // Accept both `token` and `Authorization: Bearer <token>`
     let token = req.headers.token as string;
 
+    if (!token && typeof req.headers.authorization === "string") {
+      const [scheme, value] = req.headers.authorization.split(" ");
+      if (scheme?.toLowerCase() === "bearer" && value) {
+        token = value;
+      }
+    }
+
     if (!token) {
       res.status(403).json({ message: "Please Login" });
       return;
     }
 
-    const { data } = await axios.get(`${process.env.USER_URL}/api/v1/user/me`, {
+    const { data } = await axios.get(`${USER_SERVICE_URL}/api/v1/user/me`, {
       headers: { token },
     });
 
