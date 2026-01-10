@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { adminAPI } from '../utils/api';
 
 function UploadForm() {
   const navigate = useNavigate();
@@ -63,19 +63,14 @@ function UploadForm() {
       return;
     }
     setLoading(true);
-    const formData = new FormData();
-    formData.append('title', albumData.title);
-    formData.append('description', albumData.description);
-    formData.append('file', albumData.thumbnail);
 
     try {
-      const response = await axios.post('https://tunist-admin-service-1.onrender.com/api/v1/album/new', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          token: `${token}`,
-        },
+      const response = await adminAPI.createAlbum({
+        title: albumData.title,
+        description: albumData.description,
+        thumbnail: albumData.thumbnail,
       });
-      setAlbumId(response.data.album._id);
+      setAlbumId(response.data.album.id);
       showNotification('Album created successfully!');
       setAlbumData({ title: '', description: '', thumbnail: null });
     } catch (err) {
@@ -97,30 +92,20 @@ function UploadForm() {
       return;
     }
     setLoading(true);
-    const formData = new FormData();
-    formData.append('title', songData.title);
-    formData.append('description', songData.description);
-    formData.append('file', songData.audio);
-    formData.append('album', albumId);
 
     try {
-      const response = await axios.post('https://tunist-admin-service-1.onrender.com/api/v1/song/new', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          token: `${token}`,
-        },
+      const response = await adminAPI.createSong({
+        title: songData.title,
+        description: songData.description,
+        audio: songData.audio,
+        albumId: albumId,
       });
-      const songId = response.data.song._id;
+      const songId = response.data.song.id;
+      
       if (songData.thumbnail) {
-        const thumbnailFormData = new FormData();
-        thumbnailFormData.append('file', songData.thumbnail);
-        await axios.post(`https://tunist-admin-service-1.onrender.com/api/v1/song/${songId}`, thumbnailFormData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            token: `${token}`,
-          },
-        });
+        await adminAPI.addSongThumbnail(songId, songData.thumbnail);
       }
+      
       setSongs([...songs, { id: songId, title: songData.title }]);
       showNotification('Song uploaded successfully!');
       setSongData({ title: '', description: '', audio: null, thumbnail: null });
@@ -140,11 +125,7 @@ function UploadForm() {
     }
     setLoading(true);
     try {
-      await axios.delete(`https://tunist-admin-service-1.onrender.com/api/v1/album/${albumId}`, {
-        headers: {
-          token: `${token}`,
-        },
-      });
+      await adminAPI.deleteAlbum(albumId);
       showNotification('Album deleted successfully!');
       setAlbumId(null);
       setSongs([]);
@@ -164,11 +145,7 @@ function UploadForm() {
     }
     setLoading(true);
     try {
-      await axios.delete(`https://tunist-admin-service-1.onrender.com/api/v1/song/${songId}`, {
-        headers: {
-          token: `${token}`,
-        },
-      });
+      await adminAPI.deleteSong(songId);
       setSongs(songs.filter((song) => song.id !== songId));
       showNotification('Song deleted successfully!');
     } catch (err) {

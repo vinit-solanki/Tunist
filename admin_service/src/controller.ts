@@ -80,13 +80,15 @@ export const addSong = tryCatch(async (req: AuthenticatedRequest, res: Response)
     })
     const result = await sql`
     INSERT INTO songs (title, description, audio, album_id) VALUES (${title}, ${description}, ${cloud.secure_url}, ${album})
+    RETURNING *
     `;
     if(redisClient.isReady){
         await redisClient.del("songs")
-        console.log("Cache invalidated for album")
+        console.log("Cache invalidated for songs")
     }
     res.json({
         message: "Song added",
+        song: result[0],
     })
 })
 

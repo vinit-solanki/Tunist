@@ -39,6 +39,10 @@ const App = () => {
     React.useEffect(() => {
       const checkAdmin = async () => {
         const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
         try {
           const res = await fetch("https://tunist-user-service.onrender.com/api/v1/user/me", {
             method: "GET",
@@ -48,20 +52,28 @@ const App = () => {
             },
           });
           const data = await res.json();
-          if (data.role === "admin") {
+          // Check both data.role and data.user.role to handle different response structures
+          if (data.role === "admin" || data.user?.role === "admin") {
             setIsAdmin(true);
           } else {
+            alert("Access Denied: Admin privileges required");
             navigate("/error-page");
           }
         } catch (err) {
-          console.error(err);
-          navigate("/error-page");
+          console.error("Admin check error:", err);
+          navigate("/login");
         }
       };
       checkAdmin();
     }, [navigate]);
 
-    if (isAdmin === null) return <div>Loading...</div>;
+    if (isAdmin === null) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+          <div className="text-white text-xl">Verifying admin access...</div>
+        </div>
+      );
+    }
 
     return children;
   };

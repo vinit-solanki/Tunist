@@ -250,23 +250,6 @@ const MusicRecommendations = () => {
           </select>
         </div>
 
-        {/* Genre */}
-        <div>
-          <label className="block font-semibold mb-1">Genre</label>
-          <select
-            value={filters.genre}
-            onChange={(e) => handleFilterChange('genre', e.target.value)}
-            className="w-full p-2 rounded border border-gray-300"
-          >
-            <option value="">Any</option>
-            {availableOptions.genres.map((g, idx) => (
-              <option key={idx} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Tempo */}
         <div>
           <label className="block font-semibold mb-1">Tempo Range</label>
