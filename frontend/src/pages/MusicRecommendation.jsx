@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { RECOMMENDATION_SERVICE_URL } from '../config/api.config';
+
+// Use production or development API based on environment
+const API_URL = RECOMMENDATION_SERVICE_URL;
 
 const MusicRecommendations = () => {
   const [recommendations, setRecommendations] = useState([]);
@@ -15,7 +19,10 @@ const MusicRecommendations = () => {
     energy_range: { min: 0, max: 100 },
     danceability_range: { min: 0, max: 100 },
     total_songs: 0,
-    pca_components: 0
+    pca_components: 0,
+    total_clusters: 0,
+    pca_variance_explained: 0,
+    model_version: ''
   });
   const [selectedSong, setSelectedSong] = useState(null);
   const [filters, setFilters] = useState({
@@ -37,19 +44,19 @@ const MusicRecommendations = () => {
 
   const loadOptions = async () => {
     try {
-      setError(''); // Clear any previous errors
+      setError('');
       
-      // First check if the API is accessible
-      const healthResponse = await fetch('https://song-recommendation-using.onrender.com/health');
+      // Check API health
+      const healthResponse = await fetch(`${API_URL}/health`);
       const healthData = await healthResponse.json();
       
       if (!healthData.model_loaded) {
-        setError('Model not loaded on server. Please wait for the server to initialize.');
+        setError('Model not loaded on server. Please wait for initialization.');
         return;
       }
       
-      // Get debug info to troubleshoot
-      const debugResponse = await fetch('https://song-recommendation-using.onrender.com/api/debug');
+      // Get debug info
+      const debugResponse = await fetch(`${API_URL}/api/debug`);
       const debugData = await debugResponse.json();
       console.log('Debug info:', debugData);
       
@@ -59,40 +66,41 @@ const MusicRecommendations = () => {
       }
       
       if (debugData.sample_emotions && debugData.sample_emotions.length === 0) {
-        setError('No emotions found in dataset. Please check the emotion column in your CSV file.');
+        setError('No emotions found in dataset.');
         return;
       }
       
-      // Now get the options
-      const response = await fetch('https://song-recommendation-using.onrender.com/api/options');
-      const data = await response.json();
+      // Get options
+      const optionsResponse = await fetch(`${API_URL}/api/options`);
+      const optionsData = await optionsResponse.json();
       
-      if (data.error) {
-        setError(`API Error: ${data.error}`);
+      if (optionsData.error) {
+        setError(`API Error: ${optionsData.error}`);
         return;
       }
       
-      if (data && data.emotions && data.emotions.length > 0) {
-        setAvailableOptions(data);
-        setEmotion(data.emotions[0] || '');
-        console.log('Loaded options successfully:', {
-          emotions: data.emotions.length,
-          genres: data.genres.length,
-          totalSongs: data.total_songs
+      if (optionsData && optionsData.emotions && optionsData.emotions.length > 0) {
+        setAvailableOptions(optionsData);
+        setEmotion(optionsData.emotions[0] || '');
+        console.log('Loaded enhanced options:', {
+          emotions: optionsData.emotions.length,
+          genres: optionsData.genres.length,
+          totalSongs: optionsData.total_songs,
+          clusters: optionsData.total_clusters,
+          version: optionsData.model_version
         });
       } else {
-        setError('No emotions available in the dataset. Please check your data.');
-        console.error('Options response:', data);
+        setError('No emotions available in the dataset.');
       }
     } catch (err) {
       console.error('Error loading options:', err);
-      setError(`Failed to load options: ${err.message}. Please check if the server is running at https://song-recommendation-using.onrender.com`);
+      setError(`Failed to load options: ${err.message}. Please check if the server is running at ${API_URL}`);
     }
   };
 
   const loadModelInfo = async () => {
     try {
-      const response = await fetch('https://song-recommendation-using.onrender.com/api/model-info');
+      const response = await fetch(`${API_URL}/api/model-info`);
       const data = await response.json();
       if (!data.error) {
         setModelInfo(data);
@@ -119,27 +127,24 @@ const MusicRecommendations = () => {
       setSimilarSongs([]);
       setSelectedSong(null);
 
-      const response = await fetch(
-        'https://song-recommendation-using.onrender.com/api/recommend',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            emotion,
-            num_recommendations: 9,
-            filters: {
-              genre: filters.genre ? [filters.genre] : [],
-              tempo_min: filters.tempo_min ? parseFloat(filters.tempo_min) : undefined,
-              tempo_max: filters.tempo_max ? parseFloat(filters.tempo_max) : undefined,
-              energy_min: filters.energy_min ? parseFloat(filters.energy_min) / 100 : undefined,
-              energy_max: filters.energy_max ? parseFloat(filters.energy_max) / 100 : undefined,
-              danceability_min: filters.danceability_min ? parseFloat(filters.danceability_min) / 100 : undefined,
-              danceability_max: filters.danceability_max ? parseFloat(filters.danceability_max) / 100 : undefined,
-              explicit: filters.explicit
-            }
-          })
-        }
-      );
+      const response = await fetch(`${API_URL}/api/recommend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emotion,
+          num_recommendations: 9,
+          filters: {
+            genre: filters.genre ? [filters.genre] : [],
+            tempo_min: filters.tempo_min ? parseFloat(filters.tempo_min) : undefined,
+            tempo_max: filters.tempo_max ? parseFloat(filters.tempo_max) : undefined,
+            energy_min: filters.energy_min ? parseFloat(filters.energy_min) / 100 : undefined,
+            energy_max: filters.energy_max ? parseFloat(filters.energy_max) / 100 : undefined,
+            danceability_min: filters.danceability_min ? parseFloat(filters.danceability_min) / 100 : undefined,
+            danceability_max: filters.danceability_max ? parseFloat(filters.danceability_max) / 100 : undefined,
+            explicit: filters.explicit
+          }
+        })
+      });
 
       const data = await response.json();
       if (data.error) {
@@ -147,6 +152,12 @@ const MusicRecommendations = () => {
         setRecommendations([]);
       } else {
         setRecommendations(data.recommendations || []);
+        console.log('Enhanced recommendations received:', {
+          count: data.recommendations?.length,
+          algorithm: data.algorithm,
+          diversity: data.diversity_score,
+          variance: data.pca_variance_explained
+        });
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
@@ -164,18 +175,15 @@ const MusicRecommendations = () => {
       setError('');
       setSelectedSong({ artist, song });
 
-      const response = await fetch(
-        'https://song-recommendation-using.onrender.com/api/similar',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            artist,
-            song,
-            num_recommendations: 6
-          })
-        }
-      );
+      const response = await fetch(`${API_URL}/api/similar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artist,
+          song,
+          num_recommendations: 6
+        })
+      });
 
       const data = await response.json();
       if (data.error) {
@@ -183,6 +191,11 @@ const MusicRecommendations = () => {
         setSimilarSongs([]);
       } else {
         setSimilarSongs(data.similar_songs || []);
+        console.log('Similar songs received:', {
+          count: data.similar_songs?.length,
+          algorithm: data.algorithm,
+          reference: data.reference_song
+        });
       }
     } catch (error) {
       console.error('Error fetching similar songs:', error);
@@ -196,17 +209,29 @@ const MusicRecommendations = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">🎵 Music Recommendations</h2>
+        <h2 className="text-2xl font-bold mb-2">🎵 Enhanced Music Recommendations</h2>
         <p className="text-gray-600 text-sm">
-          Powered by PCA and Cosine Similarity
+          Powered by Hybrid PCA + Cosine Similarity + Diversity Optimization
         </p>
         {modelInfo && (
           <div className="mt-2 text-xs text-gray-500 flex items-center justify-center gap-4">
-            <span>{modelInfo.total_songs} songs</span>
+            <span>📊 {modelInfo.total_songs} songs</span>
             <span>•</span>
-            <span>{modelInfo.pca_components} PCA components</span>
+            <span>🧠 {modelInfo.pca_components} PCA components</span>
             <span>•</span>
-            <span>{(modelInfo.explained_variance * 100).toFixed(1)}% variance explained</span>
+            <span>📈 {(modelInfo.explained_variance * 100).toFixed(1)}% variance</span>
+            {modelInfo.total_clusters > 0 && (
+              <>
+                <span>•</span>
+                <span>🎪 {modelInfo.total_clusters} clusters</span>
+              </>
+            )}
+            {modelInfo.model_version && (
+              <>
+                <span>•</span>
+                <span>v{modelInfo.model_version}</span>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -335,7 +360,17 @@ const MusicRecommendations = () => {
       {/* Recommendations */}
       {recommendations.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Recommended Songs</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold">Recommended Songs</h3>
+            {recommendations.length > 0 && recommendations[0]?.ranking_score && (
+              <div className="text-xs text-gray-500 flex gap-3">
+                <span title="Algorithm used">🤖 Hybrid Multi-Metric</span>
+                {modelInfo?.diversity_weight !== undefined && (
+                  <span title="Diversity optimization">🌈 Diversity: {(modelInfo.diversity_weight * 100).toFixed(0)}%</span>
+                )}
+              </div>
+            )}
+          </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {recommendations.map((song, index) => (
               <div
@@ -347,15 +382,30 @@ const MusicRecommendations = () => {
                 <p className="text-gray-400">{song.artist}</p>
                 <p className="text-sm text-gray-500">{song.genre}</p>
                 <div className="mt-2 text-xs text-gray-400">
-                  Popularity: {song.popularity}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-green-600 px-2 py-0.5 rounded">⭐ {song.popularity}</span>
+                    {song.ranking_score && (
+                      <span className="bg-blue-600 px-2 py-0.5 rounded" title="Final ranking score">
+                        🎯 {song.ranking_score.toFixed(3)}
+                      </span>
+                    )}
+                  </div>
+                  Similarity: {song.similarity_score}
+                  {song.ranking_score && song.similarity_score !== song.ranking_score && (
+                    <> (base) → {song.ranking_score.toFixed(3)} (ranked)</>
+                  )}
                   <br />
                   Release: {song.release_date}
-                  <br />
-                  Similarity: {song.similarity_score}
                   {song.tempo && (
                     <>
                       <br />
                       Tempo: {song.tempo} | Energy: {(song.energy * 100).toFixed(0)}% | Dance: {(song.danceability * 100).toFixed(0)}%
+                    </>
+                  )}
+                  {song.positiveness !== undefined && (
+                    <>
+                      <br />
+                      Mood: {(song.positiveness * 100).toFixed(0)}%
                     </>
                   )}
                 </div>

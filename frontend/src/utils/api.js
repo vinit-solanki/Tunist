@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const ADMIN_SERVICE_URL = 'https://tunist-admin-service-1.onrender.com/api/v1';
-const USER_SERVICE_URL = 'https://tunist-user-service.onrender.com/api/v1';
+import { ADMIN_SERVICE_URL, USER_SERVICE_URL, RECOMMENDATION_SERVICE_URL } from '../config/api.config';
 
 // Get token from localStorage
 const getToken = () => localStorage.getItem('token');
@@ -87,4 +85,63 @@ export const userAPI = {
   },
 };
 
-export default { adminAPI, userAPI };
+// Recommendation Service APIs (Enhanced)
+export const recommendationAPI = {
+  // Check API health
+  getHealth: async () => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/health`);
+  },
+
+  // Get available filtering options
+  getOptions: async () => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/api/options`);
+  },
+
+  // Get model information
+  getModelInfo: async () => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/api/model-info`);
+  },
+
+  // Get statistics
+  getStats: async () => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/api/stats`);
+  },
+
+  // Get emotion-based recommendations (enhanced)
+  getRecommendations: async (emotion, numRecommendations = 10, filters = {}) => {
+    return axios.post(`${RECOMMENDATION_SERVICE_URL}/api/recommend`, {
+      emotion,
+      num_recommendations: numRecommendations,
+      filters,
+    });
+  },
+
+  // Get similar songs (enhanced)
+  getSimilarSongs: async (artist, song, numRecommendations = 10) => {
+    return axios.post(`${RECOMMENDATION_SERVICE_URL}/api/similar`, {
+      artist,
+      song,
+      num_recommendations: numRecommendations,
+    });
+  },
+
+  // Get songs from a cluster (discovery feature)
+  getClusterSongs: async (clusterId, num = 20) => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/api/cluster/${clusterId}?num=${num}`);
+  },
+
+  // Search for songs
+  searchSongs: async (query, limit = 20) => {
+    return axios.post(`${RECOMMENDATION_SERVICE_URL}/api/search`, {
+      query,
+      limit,
+    });
+  },
+
+  // Get debug info
+  getDebug: async () => {
+    return axios.get(`${RECOMMENDATION_SERVICE_URL}/api/debug`);
+  },
+};
+
+export default { adminAPI, userAPI, recommendationAPI };
