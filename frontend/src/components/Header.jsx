@@ -132,8 +132,13 @@ const Header = () => {
 
           <div className="mb-4">
               <Link to="/upload-form">
-            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white cursor-pointer p-3 rounded-lg text-xs font-semibold uppercase tracking-wider">
+            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white cursor-pointer p-3 rounded-lg text-xs font-semibold uppercase tracking-wider mb-2">
               + Upload Your Music
+            </button>
+             </Link>
+            <Link to="/admin">
+            <button className="w-full bg-gradient-to-r from-green-600 to-teal-500 text-white cursor-pointer p-3 rounded-lg text-xs font-semibold uppercase tracking-wider">
+              Admin Dashboard
             </button>
              </Link>
           </div>

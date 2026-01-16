@@ -63,6 +63,20 @@ export const adminAPI = {
       headers: { token: getToken() },
     });
   },
+
+  // Get all albums
+  getAllAlbums: async () => {
+    return axios.get(`${ADMIN_SERVICE_URL}/albums`, {
+      headers: { token: getToken() },
+    });
+  },
+
+  // Get all songs
+  getAllSongs: async () => {
+    return axios.get(`${ADMIN_SERVICE_URL}/songs`, {
+      headers: { token: getToken() },
+    });
+  },
 };
 
 // User Service APIs

@@ -19,6 +19,7 @@ import Groups from "./pages/Groups";
 import MusicRecommendations from "./pages/MusicRecommendation";
 import GroupById from "./pages/GroupById";
 import UploadForm from "./pages/UploadForm";
+import Admin from "./pages/Admin";
 import ErrorPage from "./pages/ErrorPage";
 import { useNavigate } from "react-router-dom";
 
@@ -173,6 +174,16 @@ const App = () => {
               element={
                 <PrivateRoute>
                   <GroupById />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <Admin />
+                  </AdminRoute>
                 </PrivateRoute>
               }
             />
