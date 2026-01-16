@@ -45,10 +45,18 @@ export const isAuth = async (
       headers: { token },
     });
 
-    req.user = data;
+    // Extract user from response - handle both direct user object and wrapped response
+    req.user = data.user || data;
+
+    // Verify user has valid structure
+    if (!req.user || !req.user._id) {
+      res.status(403).json({ message: "Invalid user data" });
+      return;
+    }
 
     next();
   } catch (error) {
+    console.error("Auth error:", error instanceof Error ? error.message : String(error));
     res.status(403).json({ message: "Please Login" });
   }
 };

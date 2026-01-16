@@ -30,20 +30,23 @@ function Admin() {
       setLoading(true);
       // Fetch albums
       const albumsRes = await adminAPI.getAllAlbums();
+      console.log('Albums response:', albumsRes);
       const albumsData = albumsRes.data.albums || albumsRes.data || [];
-      setAlbums(albumsData);
+      setAlbums(Array.isArray(albumsData) ? albumsData : []);
 
       // Fetch songs
       const songsRes = await adminAPI.getAllSongs();
+      console.log('Songs response:', songsRes);
       const songsData = songsRes.data.songs || songsRes.data || [];
-      setSongs(songsData);
+      setSongs(Array.isArray(songsData) ? songsData : []);
 
       setStats({
-        totalAlbums: albumsData.length,
-        totalSongs: songsData.length,
+        totalAlbums: Array.isArray(albumsData) ? albumsData.length : 0,
+        totalSongs: Array.isArray(songsData) ? songsData.length : 0,
       });
     } catch (err) {
-      console.error('Error fetching admin data:', err);
+      console.error('Error fetching admin data:', err.message, err.response?.data);
+      alert(`Error loading data: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }

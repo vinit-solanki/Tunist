@@ -183,3 +183,43 @@ export const deleteSong = tryCatch(async (req: AuthenticatedRequest, res: Respon
         message: "Song deleted",
     })
 })
+
+export const getAlbums = tryCatch(async (req: AuthenticatedRequest, res: Response) => {
+    if (req.user?.role!== "admin") {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+    }
+    
+    try {
+        const albums = await sql`SELECT * FROM albums ORDER BY created_at DESC`;
+        res.json({
+            message: "Albums retrieved",
+            albums: albums,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching albums",
+            error: error,
+        });
+    }
+})
+
+export const getSongs = tryCatch(async (req: AuthenticatedRequest, res: Response) => {
+    if (req.user?.role!== "admin") {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+    }
+    
+    try {
+        const songs = await sql`SELECT * FROM songs ORDER BY created_at DESC`;
+        res.json({
+            message: "Songs retrieved",
+            songs: songs,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching songs",
+            error: error,
+        });
+    }
+})

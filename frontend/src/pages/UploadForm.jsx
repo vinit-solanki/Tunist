@@ -83,6 +83,7 @@ function UploadForm({ onUploadSuccess = null }) {
         description: albumData.description,
         thumbnail: albumData.thumbnail,
       });
+      console.log('Album creation response:', response);
       setAlbumId(response.data.album.id);
       showNotification('Album created successfully!');
       setAlbumData({ title: '', description: '', thumbnail: null });
@@ -93,6 +94,7 @@ function UploadForm({ onUploadSuccess = null }) {
         onUploadSuccess();
       }
     } catch (err) {
+      console.error('Album creation error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Album creation failed');
     } finally {
       setLoading(false);
@@ -132,6 +134,7 @@ function UploadForm({ onUploadSuccess = null }) {
         audio: songData.audio,
         albumId: albumId,
       });
+      console.log('Song creation response:', response);
       const songId = response.data.song.id;
       
       if (songData.thumbnail) {
@@ -148,6 +151,7 @@ function UploadForm({ onUploadSuccess = null }) {
         onUploadSuccess();
       }
     } catch (err) {
+      console.error('Song creation error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Song upload failed');
     } finally {
       setLoading(false);
