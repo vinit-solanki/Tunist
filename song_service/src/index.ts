@@ -6,17 +6,18 @@ import cors from 'cors';
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+
+// CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://tunist-song-service.onrender.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'token'],
   credentials: true
 }));
-app.use(cors({ origin: '*' }));
 export const redisClient = redis.createClient({
     password: `${process.env.REDIS_PASSWORD}`,
     socket: {

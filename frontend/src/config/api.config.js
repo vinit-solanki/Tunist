@@ -10,13 +10,13 @@ const API_URLS = {
   
   // Development URLs (local)
   development: {
-    admin: 'http://localhost:5001/api/v1',
-    user: 'http://localhost:5002/api/v1',
+    admin: 'http://localhost:4000/api/v1',
+    user: 'http://localhost:3000/api/v1',
   },
 };
 
 // Detect environment (for admin and user services)
-const env = process.env.NODE_ENV || 'production';
+const env = 'development';
 
 // Export active configuration
 export const API_CONFIG = API_URLS[env];

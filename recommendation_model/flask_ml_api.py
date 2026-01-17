@@ -1,11 +1,11 @@
-# flask_ml_api.py
+# flask_ml_api.py - IMPROVED VERSION
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import os
 import traceback
 import logging
-from model import MusicRecommendationModel
+from improved_recommendation_api import ImprovedMusicRecommendationModel
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -18,33 +18,34 @@ CORS(app, origins=["*"])  # Allow all origins for development
 model = None
 
 def initialize_model():
-    """Initialize the recommendation model"""
+    """Initialize the improved recommendation model"""
     global model
     try:
-        logger.info("Initializing Music Recommendation Model...")
-        model = MusicRecommendationModel(n_components=10)
+        logger.info("Initializing Improved Music Recommendation Model...")
+        model = ImprovedMusicRecommendationModel(n_components=15, diversity_weight=0.4)
         
-        # Try to load existing model
-        if os.path.exists('music_recommendation_model.pkl'):
-            logger.info("Loading existing model from pickle file...")
-            model.load_model('music_recommendation_model.pkl')
-            logger.info("Model loaded successfully!")
-            
-            # Verify model has data
-            if model.df is not None and len(model.df) > 0:
-                logger.info(f"Model contains {len(model.df)} songs")
-                if 'emotion' in model.df.columns:
-                    emotions = model.df['emotion'].unique().tolist()
-                    logger.info(f"Available emotions: {emotions}")
-                else:
-                    logger.warning("'emotion' column not found in loaded model data")
-                return True
-            else:
-                logger.warning("Loaded model has no data, will retrain...")
+        # Try to load from pickle
+        pickle_path = 'music_recommendation_model.pkl'
+        if os.path.exists(pickle_path):
+            logger.info(f"Loading pre-trained model from {pickle_path}...")
+            try:
+                model.load_model(pickle_path)
+                logger.info("Model loaded successfully from pickle!")
+                if model.df is not None and len(model.df) > 0:
+                    logger.info(f"Dataset loaded: {len(model.df)} songs")
+                    if 'emotion' in model.df.columns:
+                        emotions = model.df['emotion'].unique().tolist()
+                        genres = model.df['Genre'].unique().tolist()
+                        logger.info(f"Available emotions ({len(emotions)}): {emotions}")
+                        logger.info(f"Available genres ({len(genres)}): {genres[:10]}...")
+                    return True
+            except Exception as pickle_error:
+                logger.warning(f"Could not load pickle model: {pickle_error}")
+                # Fall through to train from CSV
                 
         # Train new model if dataset exists or if loaded model has no data
         if os.path.exists('light_spotify_dataset.csv'):
-            logger.info("Training new model from dataset...")
+            logger.info("Training new improved model from dataset...")
             df = pd.read_csv('light_spotify_dataset.csv')
             logger.info(f"Loaded dataset with {len(df)} songs")
             
@@ -78,18 +79,18 @@ def initialize_model():
 def health_check():
     """Health check endpoint"""
     model_status = model is not None
-    model_info = {}
+    model_info_dict = {}
     
     if model_status:
         try:
-            model_info = model.get_model_info()
+            model_info_dict = model.model_info()
         except:
-            model_info = {"error": "Model info unavailable"}
+            model_info_dict = {"error": "Model info unavailable"}
     
     return jsonify({
         'status': 'healthy',
         'model_loaded': model_status,
-        'model_info': model_info
+        'model_info': model_info_dict
     })
 
 @app.route('/api/options', methods=['GET'])
@@ -102,16 +103,20 @@ def get_options():
         if model.df is None:
             return jsonify({'error': 'Model not trained with data'}), 500
             
-        options = model.get_available_options()
-        logger.info(f"Retrieved available options: {len(options.get('emotions', []))} emotions, {len(options.get('genres', []))} genres")
+        # Get available options from the model
+        emotions = sorted(model.df['emotion'].unique().tolist())
+        genres = sorted(model.df['Genre'].unique().tolist())
         
-        # Debug log to check what emotions are available
-        if options.get('emotions'):
-            logger.info(f"Available emotions: {options['emotions']}")
-        else:
-            logger.warning("No emotions found in dataset!")
-            
-        return jsonify(options)
+        logger.info(f"Retrieved available options: {len(emotions)} emotions, {len(genres)} genres")
+        logger.info(f"Available emotions: {emotions}")
+        
+        return jsonify({
+            'emotions': emotions,
+            'genres': genres,
+            'total_songs': len(model.df),
+            'pca_components': int(model.pca.n_components_),
+            'nn_metric': 'cosine'
+        })
         
     except Exception as e:
         logger.error(f"Error getting options: {e}")
@@ -120,7 +125,7 @@ def get_options():
 
 @app.route('/api/recommend', methods=['POST'])
 def recommend_songs():
-    """Get emotion-based song recommendations"""
+    """Get emotion-based song recommendations (improved with fallback)"""
     try:
         if model is None:
             return jsonify({'error': 'Model not initialized'}), 500
@@ -128,7 +133,7 @@ def recommend_songs():
         # Parse request data
         data = request.get_json() or {}
         emotion = data.get('emotion')
-        num_recommendations = data.get('num_recommendations', 10)
+        num_recommendations = data.get('num_recommendations', 20)
         filters = data.get('filters', {})
         
         # Validate input
@@ -140,12 +145,8 @@ def recommend_songs():
             
         logger.info(f"Getting recommendations for emotion: {emotion}, count: {num_recommendations}")
         
-        # Get recommendations
-        result = model.get_emotion_based_recommendations(
-            emotion, 
-            num_recommendations, 
-            filters
-        )
+        # Get recommendations using improved method with fallback
+        result = model.recommend_by_emotion_improved(emotion, n=num_recommendations)
         
         if 'error' in result:
             return jsonify(result), 400
@@ -169,7 +170,7 @@ def get_similar_songs():
         data = request.get_json() or {}
         artist = data.get('artist', '').strip()
         song = data.get('song', '').strip()
-        num_recommendations = data.get('num_recommendations', 10)
+        num_recommendations = data.get('num_recommendations', 20)
         
         # Validate input
         if not artist or not song:
@@ -180,17 +181,89 @@ def get_similar_songs():
             
         logger.info(f"Finding songs similar to '{song}' by '{artist}'")
         
-        # Get similar songs
-        result = model.get_similar_songs(artist, song, num_recommendations)
+        # Find the reference song
+        mask = (model.df['artist'].str.lower() == artist.lower()) & (model.df['song'].str.lower() == song.lower())
+        ref_songs = model.df[mask]
         
-        if 'error' in result:
-            return jsonify(result), 404
+        if len(ref_songs) == 0:
+            return jsonify({'error': f'Song "{song}" by "{artist}" not found'}), 404
+        
+        ref_idx = ref_songs.index[0]
+        idx = model.df.index.get_loc(ref_idx)
+        
+        # Get similar songs using KNN
+        distances, indices = model.nn.kneighbors(
+            [model.features_scaled[idx]],
+            n_neighbors=min(num_recommendations + 1, len(model.df))
+        )
+        
+        similar_songs = []
+        for i in indices[0][1:]:  # Skip the first one (the reference song itself)
+            song_data = model.df.iloc[i]
+            similar_songs.append({
+                'artist': song_data['artist'],
+                'song': song_data['song'],
+                'emotion': song_data['emotion'],
+                'genre': song_data['Genre'],
+                'popularity': int(song_data['Popularity']),
+                'energy': int(song_data['Energy']),
+                'danceability': int(song_data['Danceability']),
+                'tempo': int(song_data['Tempo']),
+                'similarity_score': round(float(distances[0][list(indices[0]).index(i)]), 3)
+            })
             
-        logger.info(f"Successfully found {len(result.get('similar_songs', []))} similar songs")
-        return jsonify(result)
+            if len(similar_songs) >= num_recommendations:
+                break
+        
+        logger.info(f"Successfully found {len(similar_songs)} similar songs")
+        return jsonify({
+            'reference_song': {
+                'artist': ref_songs.iloc[0]['artist'],
+                'song': ref_songs.iloc[0]['song'],
+                'emotion': ref_songs.iloc[0]['emotion'],
+                'genre': ref_songs.iloc[0]['Genre']
+            },
+            'similar_songs': similar_songs,
+            'count': len(similar_songs)
+        })
         
     except Exception as e:
         logger.error(f"Error in get_similar_songs: {e}")
+        traceback.print_exc()
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/recommend-by-genre', methods=['POST'])
+def recommend_by_genre_endpoint():
+    """Get genre-based song recommendations"""
+    try:
+        if model is None:
+            return jsonify({'error': 'Model not initialized'}), 500
+            
+        # Parse request data
+        data = request.get_json() or {}
+        genre = data.get('genre')
+        num_recommendations = data.get('num_recommendations', 20)
+        
+        # Validate input
+        if not genre:
+            return jsonify({'error': 'genre parameter is required'}), 400
+            
+        if num_recommendations > 50:
+            num_recommendations = 50  # Limit for performance
+            
+        logger.info(f"Getting recommendations for genre: {genre}, count: {num_recommendations}")
+        
+        # Get recommendations by genre
+        result = model.recommend_by_genre(genre, num_recommendations)
+        
+        if 'error' in result:
+            return jsonify(result), 400
+            
+        logger.info(f"Successfully generated {len(result.get('recommendations', []))} genre-based recommendations")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in recommend_by_genre_endpoint: {e}")
         traceback.print_exc()
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
@@ -236,7 +309,7 @@ def get_model_info():
         if model is None:
             return jsonify({'error': 'Model not initialized'}), 500
             
-        info = model.get_model_info()
+        info = model.model_info()
         return jsonify(info)
         
     except Exception as e:
@@ -259,15 +332,11 @@ def search_songs():
             
         # Search in dataset
         df = model.df
-        artist_col = 'artist' if 'artist' in df.columns else 'Artist'
-        song_col = 'song' if 'song' in df.columns else 'Song'
-        if song_col not in df.columns:
-            song_col = 'Track Name'
-            
+        
         # Search in artist and song names
         mask = (
-            df[artist_col].str.lower().str.contains(query, na=False) |
-            df[song_col].str.lower().str.contains(query, na=False)
+            df['artist'].str.lower().str.contains(query, na=False) |
+            df['song'].str.lower().str.contains(query, na=False)
         )
         
         results = df[mask].head(limit)
@@ -275,8 +344,8 @@ def search_songs():
         search_results = []
         for _, row in results.iterrows():
             search_results.append({
-                'artist': str(row.get(artist_col, 'Unknown')),
-                'song': str(row.get(song_col, 'Unknown')),
+                'artist': str(row.get('artist', 'Unknown')),
+                'song': str(row.get('song', 'Unknown')),
                 'emotion': str(row.get('emotion', 'Unknown')),
                 'genre': str(row.get('Genre', 'Unknown')),
                 'popularity': int(row.get('Popularity', 0)),
@@ -308,11 +377,19 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    logger.info("Starting Music Recommendation API Server...")
+    logger.info("Starting Improved Music Recommendation API Server...")
     
     if initialize_model():
         logger.info("🎵 Model initialized successfully!")
         logger.info("🚀 Starting Flask server on http://0.0.0.0:5005")
+        logger.info("\nAvailable endpoints:")
+        logger.info("  POST /api/recommend - Emotion-based recommendations (with fallback)")
+        logger.info("  POST /api/recommend-by-genre - Genre-based recommendations")
+        logger.info("  POST /api/similar - Similar songs to a specific track")
+        logger.info("  GET /api/options - Available emotions and genres")
+        logger.info("  GET /api/model-info - Model information")
+        logger.info("  POST /api/search - Search for songs")
+        logger.info("  GET /health - Health check")
         
         # Run with different configurations based on environment
         debug_mode = os.getenv('FLASK_ENV') == 'development'

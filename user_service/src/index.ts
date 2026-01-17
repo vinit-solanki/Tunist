@@ -6,14 +6,15 @@ import cors from 'cors';
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+// CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://tunist-user-service.onrender.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'token'],
   credentials: true
 }));
-app.use(cors({ origin: '*' }));
+
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 const PORT = process.env.PORT || 3000;

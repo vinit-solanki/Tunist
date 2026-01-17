@@ -132,7 +132,7 @@ const MusicRecommendations = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           emotion,
-          num_recommendations: 9,
+          num_recommendations: 20,  // Increased from 9 to 20
           filters: {
             genre: filters.genre ? [filters.genre] : [],
             tempo_min: filters.tempo_min ? parseFloat(filters.tempo_min) : undefined,
@@ -152,10 +152,9 @@ const MusicRecommendations = () => {
         setRecommendations([]);
       } else {
         setRecommendations(data.recommendations || []);
-        console.log('Enhanced recommendations received:', {
+        console.log('Improved recommendations received:', {
           count: data.recommendations?.length,
           algorithm: data.algorithm,
-          diversity: data.diversity_score,
           variance: data.pca_variance_explained
         });
       }

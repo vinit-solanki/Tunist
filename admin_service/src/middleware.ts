@@ -37,27 +37,38 @@ export const isAuth = async (
     }
 
     if (!token) {
-      res.status(403).json({ message: "Please Login" });
+      res.status(401).json({ message: "Authentication token required. Please login." });
       return;
     }
 
-    const { data } = await axios.get(`${USER_SERVICE_URL}/api/v1/user/me`, {
-      headers: { token },
-    });
+    try {
+      const { data } = await axios.get(`${USER_SERVICE_URL}/api/v1/user/me`, {
+        headers: { token },
+      });
 
-    // Extract user from response - handle both direct user object and wrapped response
-    req.user = data.user || data;
+      // Extract user from response - handle both direct user object and wrapped response
+      req.user = data.user || data;
 
-    // Verify user has valid structure
-    if (!req.user || !req.user._id) {
-      res.status(403).json({ message: "Invalid user data" });
-      return;
+      // Verify user has valid structure
+      if (!req.user || !req.user._id) {
+        res.status(401).json({ message: "Invalid user data" });
+        return;
+      }
+
+      // Verify user is admin for admin service
+      if (req.user.role !== "admin") {
+        res.status(403).json({ message: "Access denied. Admin privileges required." });
+        return;
+      }
+
+      next();
+    } catch (authError) {
+      console.error("User verification error:", authError instanceof Error ? authError.message : String(authError));
+      res.status(401).json({ message: "Invalid or expired token. Please login again." });
     }
-
-    next();
   } catch (error) {
-    console.error("Auth error:", error instanceof Error ? error.message : String(error));
-    res.status(403).json({ message: "Please Login" });
+    console.error("Auth middleware error:", error instanceof Error ? error.message : String(error));
+    res.status(500).json({ message: "Authentication service error" });
   }
 };
 
